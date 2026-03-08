@@ -1,0 +1,11 @@
+{
+  "name": "mcpxdevops",
+  "version": "1.0.0",
+  "description": "MCPxDEVOPS 3D particle effect demo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "MIT"
+}

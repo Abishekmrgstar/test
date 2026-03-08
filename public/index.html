@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MCPxDEVOPS</title>
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+  background:#000;
+  font-family:Arial;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+  color:white
+}
+canvas{
+  position:absolute;
+  top:0;
+  left:0
+}
+h1{
+  position:relative;
+  z-index:2;
+  font-size:4rem;
+  letter-spacing:6px;
+  text-shadow:0 0 20px #0ff,0 0 40px #0ff,0 0 60px #0ff;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { text-shadow: 0 0 20px #0ff, 0 0 40px #0ff, 0 0 60px #0ff; }
+  50% { text-shadow: 0 0 30px #0ff, 0 0 60px #0ff, 0 0 90px #0ff, 0 0 120px #0ff; }
+}
+</style>
+</head>
+<body>
+
+<h1>MCPxDEVOPS</h1>
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+let count = 300;
+let mouseX = canvas.width / 2;
+let mouseY = canvas.height / 2;
+
+// Initialize particles with 3D positions
+for (let i = 0; i < count; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    z: Math.random() * 1000,
+    vx: (Math.random() - 0.5) * 2,
+    vy: (Math.random() - 0.5) * 2,
+    vz: (Math.random() - 0.5) * 4
+  });
+}
+
+function draw() {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Sort particles by z-depth for proper rendering
+  particles.sort((a, b) => b.z - a.z);
+
+  particles.forEach(p => {
+    // Update positions
+    p.x += p.vx;
+    p.y += p.vy;
+    p.z += p.vz;
+
+    // Boundary checks
+    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    if (p.z < 1) { p.z = 1; p.vz *= -1; }
+    if (p.z > 1000) { p.z = 1000; p.vz *= -1; }
+
+    // 3D projection
+    let perspective = 600;
+    let scale = perspective / (perspective + p.z);
+    let x = (p.x - canvas.width / 2) * scale + canvas.width / 2;
+    let y = (p.y - canvas.height / 2) * scale + canvas.height / 2;
+
+    // Size and opacity based on depth
+    let size = Math.max(0.5, 4 * scale);
+    let alpha = Math.min(1, scale * 1.5);
+
+    // Draw particle with gradient
+    let gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 2);
+    gradient.addColorStop(0, `rgba(0, 255, 255, ${alpha})`);
+    gradient.addColorStop(0.5, `rgba(0, 200, 255, ${alpha * 0.5})`);
+    gradient.addColorStop(1, `rgba(0, 100, 255, 0)`);
+
+    ctx.beginPath();
+    ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Draw connections to nearby particles
+    particles.forEach(p2 => {
+      if (p === p2) return;
+      let scale2 = perspective / (perspective + p2.z);
+      let x2 = (p2.x - canvas.width / 2) * scale2 + canvas.width / 2;
+      let y2 = (p2.y - canvas.height / 2) * scale2 + canvas.height / 2;
+      
+      let dist = Math.sqrt((x - x2) ** 2 + (y - y2) ** 2);
+      if (dist < 80) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(0, 255, 255, ${(1 - dist / 80) * 0.2 * alpha})`;
+        ctx.stroke();
+      }
+    });
+  });
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+
+// Handle mouse movement for interactive effect
+document.addEventListener("mousemove", (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  
+  particles.forEach(p => {
+    let dx = mouseX - p.x;
+    let dy = mouseY - p.y;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 150) {
+      p.vx -= dx * 0.001;
+      p.vy -= dy * 0.001;
+    }
+  });
+});
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+
+</body>
+</html>
